@@ -1,0 +1,9 @@
+# Ignorar archivos compilados de Python
+__pycache__
+.pytest_cache
+.streamlit
+
+# Ignorar archivos de configuración de entorno
+.venv
+.env
+.json
