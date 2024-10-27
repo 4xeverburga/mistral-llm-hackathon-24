@@ -19,8 +19,7 @@ Si deseas probar VirtualSellers, escribe al **+1 (415) 523-8886** y comienza el 
 </div>
 
 **Enlace a Streamlit**
-http://mistral-llm-hackathon-24-aprendiendo.streamlit.app/
-
+https://mistral-llm-hackathon-24-zagft44ecx9xvhzdyrg46b.streamlit.app/
 ## 🎯 Características Principales
 
 - 🤖 **Respuestas Personalizadas**: Agentes virtuales potentes gracias a Mistral AI y CodeGPT, que interpretan y responden de manera adaptada a cada cliente.
