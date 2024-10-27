@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 from datetime import datetime
 import locale
 
+from database import save_chat_to_db
+
 # Diccionario de traducciones para los días y meses
 DAYS_TRANSLATION = {
     'Monday': 'Lunes',
@@ -112,8 +114,13 @@ def save_chat_history(phone_number: str, history: list) -> None:
     """Guarda el historial de chat de un usuario"""
     filename = os.path.join(USERS_DIR, f"{phone_number.replace('whatsapp:', '')}.json")
     try:
+        # Guardar en archivo JSON
         with open(filename, 'w', encoding='utf-8') as f:
             json.dump(history, f, ensure_ascii=False, indent=2)
+
+        # Guardar en la base de datos PostgreSQL
+        save_chat_to_db(phone_number, history)
+
     except Exception as e:
         logging.error(f"Error guardando historial: {str(e)}")
 
