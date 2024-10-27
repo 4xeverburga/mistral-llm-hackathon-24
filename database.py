@@ -194,3 +194,50 @@ def load_chat_from_db(phone_number: str) -> list:
     except Exception as e:
         print(f"Error al cargar chat de la base de datos: {e}")
         return []
+
+
+def initialize_chat_history(phone_number: str) -> list:
+    """
+    Inicializa el historial del chat basado en el contexto del agente.
+
+    Args:
+        phone_number (str): Número de teléfono del agente
+
+    Returns:
+        list: Lista con el mensaje inicial del sistema incluyendo el contexto del agente
+    """
+    try:
+        connection = get_db_connection()
+        if connection:
+            cursor = connection.cursor()
+
+            # Preparar el agentid (eliminar 'whatsapp:' y '+' si existen)
+            agentid = phone_number.replace('whatsapp:', '').replace('+', '')
+
+            # Query para obtener el contexto del agente
+            query = """
+                SELECT context 
+                FROM agente 
+                WHERE agentid = %s 
+                LIMIT 1
+            """
+
+            cursor.execute(query, (agentid,))
+            result = cursor.fetchone()
+
+            cursor.close()
+            connection.close()
+
+            if result and result[0]:
+                return [{
+                    "role": "system",
+                    "content": result[0],
+                    "timestamp": datetime.now().isoformat()
+                }]
+
+            # Si no se encuentra el agente, retornar lista vacía
+            return []
+
+    except Exception as e:
+        print(f"Error al inicializar el historial del chat: {e}")
+        return []

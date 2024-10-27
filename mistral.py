@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from datetime import datetime
 import locale
 
-from database import save_chat_to_db, load_chat_from_db
+from database import save_chat_to_db, load_chat_from_db, initialize_chat_history
 
 # Diccionario de traducciones para los días y meses
 DAYS_TRANSLATION = {
@@ -38,7 +38,6 @@ load_dotenv()
 
 MISTRAL_API_KEY = os.getenv('MISTRAL_API_KEY')
 MISTRAL_MODEL = os.getenv('MISTRAL_MODEL', 'mistral-large-latest')
-CONTEXT_FILE = "context.txt"
 
 # Verificar credencial de Mistral
 if not MISTRAL_API_KEY:
@@ -68,41 +67,15 @@ def process_text_with_date(text: str) -> str:
     """Reemplaza {fecha_actual} con la fecha actual en cualquier texto"""
     return text.replace('{fecha_actual}', get_formatted_datetime())
 
-# Leer el contexto inicial
-try:
-    with open(CONTEXT_FILE, 'r', encoding='utf-8') as f:
-        INITIAL_CONTEXT = f.read().strip()
-except Exception as e:
-    print(f"❌ Error leyendo context.txt: {str(e)}")
-    raise
-
 # Inicializar cliente
 mistral_client = Mistral(api_key=MISTRAL_API_KEY)
 
-def initialize_chat_history() -> list:
-    """Inicializa el historial de chat con el contexto inicial"""
-    return [{
-        "role": "system",
-        "content": process_text_with_date(INITIAL_CONTEXT),
-        "timestamp": datetime.now().isoformat()
-    }]
-
 def get_completion(prompt: str, phone_number: str) -> str:
-    """
-    Obtiene una respuesta de Mistral AI considerando el historial
-
-    Args:
-        prompt (str): El mensaje del usuario
-        phone_number (str): Número de teléfono del usuario
-
-    Returns:
-        str: La respuesta generada por Mistral con fechas actualizadas
-    """
     try:
         # Cargar historial existente o inicializar nuevo con contexto
         history = load_chat_from_db(phone_number)
         if not history:
-            history = initialize_chat_history()
+            history = initialize_chat_history("1")
 
         # Agregar nuevo mensaje del usuario
         history.append({
