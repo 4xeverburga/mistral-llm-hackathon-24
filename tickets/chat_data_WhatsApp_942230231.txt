@@ -1,0 +1,7 @@
+2024-10-26 22:46:33.006898 | Usuario: aaaaaaaaa
+2024-10-26 22:46:41.702226 | Usuario: amigo?
+2024-10-26 22:46:43.108021 | Bot: ¡Hola! ¿Cómo estás hoy? ¿En qué puedo ayudarte?
+2024-10-26 22:46:45.789258 | Usuario: aaaaa
+2024-10-26 22:46:54.409740 | Usuario: hablame solo español
+2024-10-26 22:46:55.825195 | Bot: Claro, ¿en qué puedo ayudarte?
+2024-10-26 22:47:03.580731 | Admin: no

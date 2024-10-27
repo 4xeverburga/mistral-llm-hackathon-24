@@ -1,0 +1,19 @@
+2024-10-26 22:47:54.270469 | Usuario: holaaaaaaaaa
+2024-10-26 22:48:04.813769 | Usuario: por qué xuxa mepones caracteres no permitidiso
+2024-10-26 22:48:14.741431 | Bot: Parece que hay un error tipográfico en tu mensaje. Si estás recibiendo un error relacionado con caracteres no permitidos, esto generalmente ocurre cuando intentas ingresar caracteres que no están permitidos en el formato o el lenguaje que estás utilizando.
+
+Aquí hay algunas posibles causas y soluciones:
+
+1. **Caracteres Especiales**: Algunos sistemas o formatos no permiten ciertos caracteres especiales como `&`, `<`, `>`, `|`, `~`, etc. Si estás utilizando HTML, por ejemplo, podrías necesitar escapar estos caracteres.
+
+2. **Formato de Archivo**: Si estás escribiendo en un archivo de texto o un documento, asegúrate de que el formato no tenga restricciones sobre los caracteres permitidos.
+
+3. **Sistema Operativo**: Algunos sistemas operativos tienen restricciones sobre los caracteres que pueden ser utilizados en ciertos nombres de archivos o rutas.
+
+4. **Lenguaje de Programación**: Si estás escribiendo código en un lenguaje de programación, asegúrate de que los caracteres que estás utilizando sean válidos para ese lenguaje.
+
+5. **Aplicación o Sitio Web**: Algunas aplicaciones o sitios web pueden tener sus propias reglas sobre los caracteres permitidos en los nombres de usuario, contraseñas, títulos, etc.
+
+Si puedes proporcionar más detalles sobre el contexto en el que estás trabajando, podría ofrecerte una solución más específica.
+2024-10-26 22:49:01.968175 | Admin: hola
+2024-10-26 22:53:24.113916 | Admin: adasdsa
