@@ -45,15 +45,25 @@ def load_ticket_data(ticket_id):
                 ticket['tickettagarray'] = json.loads(ticket['tickettagarray'])  # Convertir las etiquetas a lista
             return ticket
 
-# Función para realizar el análisis de sentimiento utilizando Mistral
+# Función para realizar el análisis de sentimiento simplificado utilizando Mistral
 def analizar_sentimientos(conversacion_texto):
     client = Mistral(api_key=st.secrets["MISTRAL_API_KEY"])
-    prompt = f"Analiza el sentimiento de la siguiente conversación. Genera etiquetas descriptivas sobre el estado emocional del cliente:\n\n{conversacion_texto}"
+    prompt = (
+        "Analiza la siguiente conversación y clasifica el estado emocional del cliente "
+        "con una de las siguientes etiquetas: 'Calmado', 'Agradecido', 'Neutro', 'Curioso', "
+        "'Molesto', 'Estresado', o 'Frustrado'.\n\n"
+        f"{conversacion_texto}"
+    )
     response = client.chat.complete(
         model="mistral-large-latest",
         messages=[{"role": "user", "content": prompt}]
     )
     etiquetas = response.choices[0].message.content.strip().split(", ")
+    
+    # Si no se genera ninguna etiqueta, asigna 'Neutro' como predeterminado
+    if not etiquetas or etiquetas == ['']:
+        etiquetas = ["Neutro"]
+        
     return etiquetas
 
 # Botón para actualizar la lista de tickets
@@ -113,10 +123,33 @@ if selected_ticket:
         
         st.success("Análisis de sentimiento completado y etiquetas guardadas en el ticket.")
 
+# Función para estilizar etiquetas de sentimiento con colores
+def display_sentiment_tags(tags):
+    colors = {
+        "Calmado": "green",
+        "Agradecido": "blue",
+        "Neutro": "gray",
+        "Curioso": "orange",
+        "Molesto": "red",
+        "Estresado": "purple",
+        "Frustrado": "darkred"
+    }
+    
+    # Genera el HTML para cada etiqueta con su color correspondiente
+    styled_tags = [
+        f"<span style='background-color: {colors.get(tag, 'black')}; "
+        "color: white; padding: 0.2em 0.5em; margin-right: 0.5em; border-radius: 5px;'>"
+        f"{tag}</span>"
+        for tag in tags
+    ]
+    # Mostrar etiquetas en una línea de texto usando HTML
+    st.markdown("".join(styled_tags), unsafe_allow_html=True)
+
 # Visualización de Etiquetas de Sentimiento Guardadas
 st.subheader("Etiquetas de Sentimiento para el Ticket Seleccionado")
 if selected_ticket and "tickettagarray" in ticket_data:
     if ticket_data["tickettagarray"]:
-        st.write("**Etiquetas Generadas**:", ", ".join(ticket_data["tickettagarray"]))
+        st.write("**Etiquetas Generadas**:")
+        display_sentiment_tags(ticket_data["tickettagarray"])  # Mostrar las etiquetas con estilo
     else:
         st.write("No hay etiquetas generadas para este ticket.")

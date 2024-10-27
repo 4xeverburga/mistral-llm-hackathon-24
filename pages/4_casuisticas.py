@@ -138,9 +138,9 @@ if selected_ticket:
             with get_db_connection() as conn:
                 with conn.cursor() as cur:
                     cur.execute("""
-                        INSERT INTO pautas (ticket_id, conversacion, pauta, timestamp)
-                        VALUES (%s, %s, %s, %s)
-                    """, (selected_ticket, conversacion_texto, pauta_generada, timestamp))
+                        INSERT INTO pautas (pauta, ticket_id, timestamp)
+                        VALUES (%s, %s, %s)
+                    """, (pauta_generada, selected_ticket, timestamp))
                     conn.commit()
             st.success("Pauta guardada exitosamente en la base de conocimiento.")
 
@@ -149,10 +149,13 @@ st.subheader("Pautas de Conocimiento Guardadas")
 
 if pautas:
     for pauta_data in pautas:
-        st.write(f"**Pauta para Ticket {pauta_data['ticket_id']}**")
-        st.write("**Conversación**:")
-        st.write(pauta_data["conversacion"])
-        st.write("**Pauta Generada**:")
-        st.write(pauta_data["pauta"])
+        st.markdown(f"""
+        <div style="background-color: #E3F2FD; padding: 15px; margin: 10px 0; border-radius: 8px;">
+            <p><strong>Ticket ID:</strong> {pauta_data['ticket_id']}</p>
+            <p><strong>Pauta ID:</strong> {pauta_data['pautaid']}</p>
+            <p><strong>Pauta:</strong></p>
+            <p style="color: #1E88E5;">{pauta_data['pauta']}</p>
+        </div>
+        """, unsafe_allow_html=True)
 else:
     st.write("No hay pautas guardadas.")

@@ -78,8 +78,9 @@ if selected_ticket:
     # Historial de mensajes
     st.markdown("#### Historial de Mensajes")
     for message in ticket_data["message"]:
-        with st.chat_message(message["role"]):
-            st.write(message["content"])
+        if message["role"] != "system":  # Filtrar mensajes de tipo 'system'
+            with st.chat_message(message["role"]):
+                st.write(message["content"])
 
     # Entrada para respuesta de admin
     st.write("### Responder como Admin")
