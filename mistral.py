@@ -4,6 +4,33 @@ import json
 import logging
 from dotenv import load_dotenv
 from datetime import datetime
+import locale
+
+# Diccionario de traducciones para los días y meses
+DAYS_TRANSLATION = {
+    'Monday': 'Lunes',
+    'Tuesday': 'Martes',
+    'Wednesday': 'Miércoles',
+    'Thursday': 'Jueves',
+    'Friday': 'Viernes',
+    'Saturday': 'Sábado',
+    'Sunday': 'Domingo'
+}
+
+MONTHS_TRANSLATION = {
+    'January': 'Enero',
+    'February': 'Febrero',
+    'March': 'Marzo',
+    'April': 'Abril',
+    'May': 'Mayo',
+    'June': 'Junio',
+    'July': 'Julio',
+    'August': 'Agosto',
+    'September': 'Septiembre',
+    'October': 'Octubre',
+    'November': 'Noviembre',
+    'December': 'Diciembre'
+}
 
 load_dotenv()
 
@@ -21,10 +48,31 @@ if not MISTRAL_API_KEY:
     print("❌ Error: Falta MISTRAL_API_KEY en .env")
     raise ValueError("MISTRAL_API_KEY es requerido")
 
-# Verificar existencia del archivo de contexto
-if not os.path.exists(CONTEXT_FILE):
-    print("❌ Error: No se encuentra el archivo context.txt")
-    raise FileNotFoundError("Se requiere el archivo context.txt")
+
+def get_formatted_datetime():
+    """Retorna la fecha y hora actual en formato personalizado en español"""
+    now = datetime.now()
+
+    # Obtener el día de la semana en inglés y traducirlo
+    weekday_eng = now.strftime("%A")
+    weekday = DAYS_TRANSLATION.get(weekday_eng, weekday_eng)
+
+    # Obtener el mes en inglés y traducirlo
+    month_eng = now.strftime("%B")
+    month = MONTHS_TRANSLATION.get(month_eng, month_eng)
+
+    # Formatear el resto de la fecha
+    day = now.strftime("%d")
+    year = now.strftime("%Y")
+    time = now.strftime("%H:%M")  # Usando formato 24 horas
+
+    return f"{weekday} {day} de {month} del {year}, {time}"
+
+
+def process_text_with_date(text: str) -> str:
+    """Reemplaza {fecha_actual} con la fecha actual en cualquier texto"""
+    return text.replace('{fecha_actual}', get_formatted_datetime())
+
 
 # Leer el contexto inicial
 try:
@@ -55,7 +103,7 @@ def initialize_chat_history() -> list:
     """Inicializa el historial de chat con el contexto inicial"""
     return [{
         "role": "system",
-        "content": INITIAL_CONTEXT,
+        "content": process_text_with_date(INITIAL_CONTEXT),
         "timestamp": datetime.now().isoformat()
     }]
 
@@ -79,7 +127,7 @@ def get_completion(prompt: str, phone_number: str) -> str:
         phone_number (str): Número de teléfono del usuario
 
     Returns:
-        str: La respuesta generada por Mistral
+        str: La respuesta generada por Mistral con fechas actualizadas
     """
     try:
         # Cargar historial existente o inicializar nuevo con contexto
@@ -96,7 +144,7 @@ def get_completion(prompt: str, phone_number: str) -> str:
 
         # Preparar mensajes para Mistral (últimos 10 mensajes para mantener contexto)
         messages = [{"role": msg["role"], "content": msg["content"]}
-                   for msg in history[-10:]]
+                    for msg in history[-10:]]
 
         # Obtener respuesta
         chat_response = mistral_client.chat.complete(
@@ -104,7 +152,8 @@ def get_completion(prompt: str, phone_number: str) -> str:
             messages=messages
         )
 
-        response_content = chat_response.choices[0].message.content
+        # Procesar la respuesta para reemplazar {fecha_actual}
+        response_content = process_text_with_date(chat_response.choices[0].message.content)
 
         # Agregar respuesta al historial
         history.append({
