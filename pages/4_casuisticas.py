@@ -2,23 +2,18 @@
 import streamlit as st
 import psycopg2
 from psycopg2.extras import RealDictCursor
-from dotenv import load_dotenv
-import os
 import json
 import time
 from datetime import datetime
 from mistralai import Mistral  # Asegúrate de tener la API de Mistral configurada
 
-# Cargar variables de entorno
-load_dotenv()
-
-# Configuración de la conexión a PostgreSQL usando variables de entorno
+# Configuración de la conexión a PostgreSQL usando Streamlit secrets
 def get_db_connection():
     return psycopg2.connect(
-        host=os.getenv("DB_HOST"),
-        database=os.getenv("DB_NAME"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD")
+        host=st.secrets["DB_HOST"],
+        database=st.secrets["DB_NAME"],
+        user=st.secrets["DB_USER"],
+        password=st.secrets["DB_PASSWORD"]
     )
 
 # Función para simular el "streaming" de texto
@@ -60,22 +55,30 @@ def generar_pauta(conversacion_texto):
     )
     return response.choices[0].message.content
 
+# Cargar pautas desde la base de datos
+@st.cache_data
+def load_pautas():
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("SELECT * FROM pautas")
+            return cur.fetchall()
+
 # Botón para actualizar la lista de tickets y pautas
 if st.button("Actualizar lista de tickets y pautas"):
     st.cache_data.clear()  # Borra el caché para recargar los datos
     ticket_ids = get_ticket_ids()
+    pautas = load_pautas()  # Recarga las pautas desde la base de datos
 else:
     ticket_ids = get_ticket_ids()  # Cargar los tickets al inicio
+    pautas = load_pautas()  # Cargar las pautas al inicio
 
 # Selección del ticket
 selected_ticket = st.selectbox("Seleccionar un Ticket", ticket_ids)
 
 # Visualización del ticket seleccionado
 if selected_ticket:
-    # Cargar datos del ticket desde la base de datos
     ticket_data = load_ticket_data(selected_ticket)
 
-    # Mostrar detalles del ticket
     st.write(f"### Conversación para el Ticket: {selected_ticket}")
     st.write("**Estado:**", ticket_data["statustypedesc"])
     st.write("**Prioridad:**", ticket_data["prioritytypedesc"])
@@ -84,7 +87,6 @@ if selected_ticket:
     st.write("**Fecha de Creación:**", ticket_data["recordcreationts"])
     st.write("**Última Actualización:**", ticket_data["lastupdatets"])
 
-    # Visualizar historial de mensajes solo de usuario y admin
     st.markdown("#### Historial de Mensajes")
     user_admin_messages = [
         message for message in ticket_data["message"] if message["role"] in ["user", "admin"]
@@ -93,12 +95,10 @@ if selected_ticket:
         with st.chat_message(message["role"]):
             st.write(message["content"])
 
-    # Entrada para la respuesta del administrador
     st.write("### Responder como Admin")
     admin_response = st.chat_input("Escribe tu respuesta...")
 
     if admin_response:
-        # Mostrar y transmitir la respuesta del administrador
         with st.chat_message("admin"):
             message_placeholder = st.empty()
             full_response = ""
@@ -106,7 +106,6 @@ if selected_ticket:
                 full_response += chunk
                 message_placeholder.markdown(full_response + "▌")
 
-        # Agregar respuesta del administrador al historial de mensajes
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         admin_message = {
             "message_id": len(ticket_data["message"]) + 1,
@@ -116,18 +115,16 @@ if selected_ticket:
         }
         ticket_data["message"].append(admin_message)
 
-        # Actualizar la base de datos con la respuesta del administrador
         with get_db_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute("""
                     UPDATE ticket
-                    SET message = %s, lastupdatets = %s, lastresponseasesorts = %s
+                    SET message = %s, lastupdatets = %s
                     WHERE ticket_id = %s
-                """, (json.dumps(ticket_data["message"]), timestamp, timestamp, selected_ticket))
+                """, (json.dumps(ticket_data["message"]), timestamp, selected_ticket))
                 conn.commit()
         st.success("Respuesta enviada.")
 
-    # Generación de Pauta de Conocimiento con IA
     if st.button("Generar Pauta de Conocimiento"):
         conversacion_texto = "\n".join(
             [f"{msg['role']}: {msg['content']}" for msg in user_admin_messages]
@@ -137,7 +134,6 @@ if selected_ticket:
         st.write("**Pauta Generada**:")
         st.write(pauta_generada)
 
-        # Guardar la pauta generada en la base de datos
         if st.button("Aprobar y Guardar Pauta"):
             with get_db_connection() as conn:
                 with conn.cursor() as cur:
@@ -150,11 +146,6 @@ if selected_ticket:
 
 # Visualización de Pautas Guardadas
 st.subheader("Pautas de Conocimiento Guardadas")
-def load_pautas():
-    with get_db_connection() as conn:
-        with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute("SELECT * FROM pautas")
-            return cur.fetchall()
 
 if pautas:
     for pauta_data in pautas:
