@@ -13,7 +13,9 @@
 
 Si deseas probar VirtualSellers, escribe al **+1 (415) 523-8886** y comienza el chat con **"join particularly-such"** para interactuar con nuestro asistente virtual y resolver tus dudas de manera directa.
 
-Video demostrativo: https://github.com/user-attachments/assets/5252b0e4-e3de-4cab-98d1-788caf23c160
+
+<div align="center">
+<video src='https://github.com/user-attachments/assets/67b0b447-915d-40c6-a442-50fde08d11ef' margin=auto></video> 
 
 ## 🎯 Características Principales
 
@@ -26,6 +28,10 @@ Video demostrativo: https://github.com/user-attachments/assets/5252b0e4-e3de-4ca
 - **Mistral AI y CodeGPT**: Mistral AI potencia la personalización de respuestas para los clientes, mientras que **CodeGPT ha sido fundamental en el desarrollo de este proyecto**, asistiendo en la generación de código, automatización de procesos y proporcionando recomendaciones técnicas que han optimizado la implementación de funcionalidades.
 - **Twilio**: Conexión y manejo de múltiples canales de comunicación.
 - **APIs de Integración**: Permiten una experiencia de comunicación omnicanal adaptada a cada negocio.
+
+<p align=center>
+<img src="https://github.com/user-attachments/assets/259e7b7a-c4bd-404a-9c24-7894e83b4572" width="500"/>
+</p> 
 
 ## 👥 Equipo de Desarrollo
 
