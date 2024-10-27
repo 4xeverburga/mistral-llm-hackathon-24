@@ -14,13 +14,21 @@
 Si deseas probar VirtualSellers, escribe al **+1 (415) 523-8886** y comienza el chat con **"join particularly-such"** para interactuar con nuestro asistente virtual y resolver tus dudas de manera directa.
 
 **Enlace a Video (Entrada del cliente - WhatsApp)**
-https://drive.google.com/file/d/1WVlP6mZ3POU4iZ0pOACpCsT1PHVtsyBi/view?usp=sharing
+<div align="center">
+<video src='https://github.com/user-attachments/assets/e49c8ba1-6ee7-4388-ae0f-b57e50f23938' margin=auto></video> 
+</div>
 
 **Enlace a Streamlit**
 https://mistral-llm-hackathon-24.streamlit.app/
 
 **Enlace a Video (Funcionamiento - Streamlit)**
-https://drive.google.com/file/d/1ggzRH0gdclxHJWOE74tiIq3NlHr1-Eif/view?usp=drive_link
+<div align="center">
+<video src='https://github.com/user-attachments/assets/926c0c84-e6a9-4107-b8d2-54313abc15f8' margin=auto></video> 
+</div>
+
+
+
+
 
 ## 🎯 Características Principales
 
