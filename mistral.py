@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from datetime import datetime
 import locale
 
-from database import save_chat_to_db
+from database import save_chat_to_db, load_chat_from_db
 
 # Diccionario de traducciones para los días y meses
 DAYS_TRANSLATION = {
@@ -88,18 +88,6 @@ except Exception as e:
 mistral_client = Mistral(api_key=MISTRAL_API_KEY)
 
 
-def load_chat_history(phone_number: str) -> list:
-    """Carga el historial de chat de un usuario"""
-    filename = os.path.join(USERS_DIR, f"{phone_number.replace('whatsapp:', '')}.json")
-    if os.path.exists(filename):
-        try:
-            with open(filename, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except Exception as e:
-            logging.error(f"Error cargando historial: {str(e)}")
-            return []
-    return []
-
 
 def initialize_chat_history() -> list:
     """Inicializa el historial de chat con el contexto inicial"""
@@ -138,7 +126,7 @@ def get_completion(prompt: str, phone_number: str) -> str:
     """
     try:
         # Cargar historial existente o inicializar nuevo con contexto
-        history = load_chat_history(phone_number)
+        history = load_chat_from_db(phone_number)
         if not history:
             history = initialize_chat_history()
 
@@ -171,6 +159,8 @@ def get_completion(prompt: str, phone_number: str) -> str:
 
         # Guardar historial actualizado
         save_chat_history(phone_number, history)
+
+        save_chat_to_db(phone_number, history)
 
         return response_content
     except Exception as e:

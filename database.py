@@ -55,6 +55,20 @@ def get_next_ticket_id(cursor):
         return "000001"
 
 
+def get_last_ticket_id(cursor, userid: str) -> str:
+    """Obtiene el último ticket_id para un usuario específico"""
+    query = """
+        SELECT ticket_id 
+        FROM ticket 
+        WHERE userid = %s 
+        ORDER BY ticket_id DESC 
+        LIMIT 1
+    """
+    cursor.execute(query, (userid,))
+    result = cursor.fetchone()
+    return result[0] if result else None
+
+
 def save_chat_to_db(phone_number: str, history: list) -> None:
     """
     Guarda el chat en la tabla ticket de PostgreSQL
@@ -70,28 +84,113 @@ def save_chat_to_db(phone_number: str, history: list) -> None:
             # Asegurar que el usuario existe
             ensure_user_exists(cursor, userid)
 
-            # Obtener el siguiente ticket_id
-            next_ticket_id = get_next_ticket_id(cursor)
+            # Obtener el último ticket_id del usuario
+            last_ticket_id = get_last_ticket_id(cursor, userid)
 
-            # Convertir el historial a JSON string
-            message = json.dumps(history)
+            if last_ticket_id:
+                # Si existe un ticket, actualizarlo
+                update_chat_to_db(phone_number, history)
+            else:
+                # Si no existe, crear uno nuevo
+                next_ticket_id = get_next_ticket_id(cursor)
 
-            # Query de inserción
-            insert_query = """
-                INSERT INTO ticket 
-                (ticket_id, userid, message) 
-                VALUES (%s, %s, %s)
-            """
+                # Convertir el historial a JSON string
+                message = json.dumps(history)
 
-            # Valores a insertar
-            values = (next_ticket_id, userid, message)
+                # Query de inserción
+                insert_query = """
+                    INSERT INTO ticket 
+                    (ticket_id, userid, message) 
+                    VALUES (%s, %s, %s)
+                """
 
-            # Ejecutar la inserción
-            cursor.execute(insert_query, values)
-            connection.commit()
+                # Valores a insertar
+                values = (next_ticket_id, userid, message)
+
+                # Ejecutar la inserción
+                cursor.execute(insert_query, values)
+                connection.commit()
 
             cursor.close()
             connection.close()
 
     except Exception as e:
         print(f"Error al guardar en la base de datos: {e}")
+
+
+def update_chat_to_db(phone_number: str, history: list) -> None:
+    """
+    Actualiza el chat existente en la tabla ticket de PostgreSQL
+    """
+    try:
+        connection = get_db_connection()
+        if connection:
+            cursor = connection.cursor()
+
+            # Preparar el userid
+            userid = phone_number.replace('whatsapp:', '').replace('+', '')
+
+            # Obtener el último ticket_id del usuario
+            last_ticket_id = get_last_ticket_id(cursor, userid)
+
+            if last_ticket_id:
+                # Convertir el historial a JSON string
+                message = json.dumps(history)
+
+                # Query de actualización
+                update_query = """
+                    UPDATE ticket 
+                    SET message = %s 
+                    WHERE ticket_id = %s AND userid = %s
+                """
+
+                # Valores a actualizar
+                values = (message, last_ticket_id, userid)
+
+                # Ejecutar la actualización
+                cursor.execute(update_query, values)
+                connection.commit()
+
+            cursor.close()
+            connection.close()
+
+    except Exception as e:
+        print(f"Error al actualizar en la base de datos: {e}")
+
+
+def load_chat_from_db(phone_number: str) -> list:
+    """
+    Carga el historial de chat de un usuario desde la base de datos
+    """
+    try:
+        connection = get_db_connection()
+        if connection:
+            cursor = connection.cursor()
+
+            # Preparar el userid (eliminar 'whatsapp:' y '+')
+            userid = phone_number.replace('whatsapp:', '').replace('+', '')
+
+            # Query para obtener el último mensaje
+            query = """
+                SELECT message 
+                FROM ticket 
+                WHERE userid = %s 
+                ORDER BY ticket_id DESC 
+                LIMIT 1
+            """
+
+            cursor.execute(query, (userid,))
+            result = cursor.fetchone()
+
+            cursor.close()
+            connection.close()
+
+            if result and result[0]:
+                # Convertir el JSON string a lista
+                return json.loads(result[0])
+
+            return []
+
+    except Exception as e:
+        print(f"Error al cargar chat de la base de datos: {e}")
+        return []
