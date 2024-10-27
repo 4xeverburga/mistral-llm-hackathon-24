@@ -13,7 +13,7 @@
 
 Si deseas probar VirtualSellers, escribe al **+1 (415) 523-8886** y comienza el chat con **"join particularly-such"** para interactuar con nuestro asistente virtual y resolver tus dudas de manera directa.
 
-### Video demostrativo: [https://github.com/user-attachments/assets/5252b0e4-e3de-4cab-98d1-788caf23c160](https://github.com/user-attachments/assets/5252b0e4-e3de-4cab-98d1-788caf23c160)
+Video demostrativo: [https://github.com/user-attachments/assets/5252b0e4-e3de-4cab-98d1-788caf23c160](https://github.com/user-attachments/assets/5252b0e4-e3de-4cab-98d1-788caf23c160)
 
 ## 🎯 Características Principales
 
