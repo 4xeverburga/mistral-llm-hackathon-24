@@ -105,7 +105,7 @@ def get_completion(prompt: str, phone_number: str) -> str:
         })
 
         # Guardar historial actualizado solo en base de datos
-        save_chat_to_db(phone_number, history)
+        save_chat_to_db(phone_number, history,"whatsapp")
 
         return response_content
     except Exception as e:

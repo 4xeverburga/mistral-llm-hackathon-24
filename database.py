@@ -1,3 +1,4 @@
+# database_wsp.py
 import os
 from datetime import datetime
 import psycopg2
@@ -69,9 +70,9 @@ def get_last_ticket_id(cursor, userid: str) -> str:
     return result[0] if result else None
 
 
-def save_chat_to_db(phone_number: str, history: list) -> None:
+def save_chat_to_db(phone_number: str, history: list, channel: str) -> None:
     """
-    Guarda el chat en la tabla ticket de PostgreSQL
+    Guarda el chat en la tabla ticket de PostgreSQL, con actualización de campos adicionales
     """
     try:
         connection = get_db_connection()
@@ -87,25 +88,35 @@ def save_chat_to_db(phone_number: str, history: list) -> None:
             # Obtener el último ticket_id del usuario
             last_ticket_id = get_last_ticket_id(cursor, userid)
 
+            # Determinar valores para campos adicionales
+            agentid = "1"  # Por defecto
+            statustypedesc = "nuevo" if not last_ticket_id else "abierto"
+            prioritytypedesc = "media" if channel == "whatsapp" else "alta"
+            channeltype = channel
+            message = json.dumps(history)
+            recordcreationts = datetime.now()
+            lastupdatets = datetime.now()
+
             if last_ticket_id:
                 # Si existe un ticket, actualizarlo
-                update_chat_to_db(phone_number, history)
+                update_chat_to_db(phone_number, history, channel)
             else:
                 # Si no existe, crear uno nuevo
                 next_ticket_id = get_next_ticket_id(cursor)
 
-                # Convertir el historial a JSON string
-                message = json.dumps(history)
-
                 # Query de inserción
                 insert_query = """
                     INSERT INTO ticket 
-                    (ticket_id, userid, message) 
-                    VALUES (%s, %s, %s)
+                    (ticket_id, userid, message, recordcreationts, lastupdatets, 
+                     statustypedesc, channeltype, prioritytypedesc, agentid) 
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """
 
                 # Valores a insertar
-                values = (next_ticket_id, userid, message)
+                values = (
+                    next_ticket_id, userid, message, recordcreationts, lastupdatets,
+                    statustypedesc, channeltype, prioritytypedesc, agentid
+                )
 
                 # Ejecutar la inserción
                 cursor.execute(insert_query, values)
@@ -118,9 +129,9 @@ def save_chat_to_db(phone_number: str, history: list) -> None:
         print(f"Error al guardar en la base de datos: {e}")
 
 
-def update_chat_to_db(phone_number: str, history: list) -> None:
+def update_chat_to_db(phone_number: str, history: list, channel: str) -> None:
     """
-    Actualiza el chat existente en la tabla ticket de PostgreSQL
+    Actualiza el chat existente en la tabla ticket de PostgreSQL con nuevos mensajes y campos adicionales
     """
     try:
         connection = get_db_connection()
@@ -137,15 +148,24 @@ def update_chat_to_db(phone_number: str, history: list) -> None:
                 # Convertir el historial a JSON string
                 message = json.dumps(history)
 
+                # Actualizar valores adicionales
+                lastupdatets = datetime.now()
+                statustypedesc = "abierto"  # Cambiar el estado a 'abierto' al actualizar
+
                 # Query de actualización
                 update_query = """
                     UPDATE ticket 
-                    SET message = %s 
+                    SET message = %s, lastupdatets = %s, statustypedesc = %s, 
+                        channeltype = %s, prioritytypedesc = %s
                     WHERE ticket_id = %s AND userid = %s
                 """
 
                 # Valores a actualizar
-                values = (message, last_ticket_id, userid)
+                values = (
+                    message, lastupdatets, statustypedesc, channel,
+                    "media" if channel == "whatsapp" else "alta",
+                    last_ticket_id, userid
+                )
 
                 # Ejecutar la actualización
                 cursor.execute(update_query, values)
@@ -240,4 +260,4 @@ def initialize_chat_history(phone_number: str) -> list:
 
     except Exception as e:
         print(f"Error al inicializar el historial del chat: {e}")
-        return []
+        return[]
