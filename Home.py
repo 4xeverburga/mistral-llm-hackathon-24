@@ -3,9 +3,6 @@ import streamlit as st
 # Configuración de la página
 st.set_page_config(page_title="VirtualSellers CRM", page_icon="📋")
 
-# Añadir imagen de cabecera
-st.image("pages\logo.png", use_column_width=True)  # Cambia "imagen_bienvenida.jpg" por la ruta de tu imagen o URL
-
 # Título estilizado y descripción
 st.markdown("<h1 style='text-align: center; color: #0099CC;'>VirtualSellers</h1>", unsafe_allow_html=True)
 st.markdown("<h3 style='text-align: center; color: #555;'>Gestión de tus clientes a la palma de tu mano 👋</h3>", unsafe_allow_html=True)
