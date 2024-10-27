@@ -63,7 +63,8 @@ async def receive_message(request: Request):
         message, from_number = await twilio_chat.process_incoming_message(form_data)
 
         if message and from_number:
-            ai_response = mistral.get_completion(message)
+            # Pasamos el número de teléfono a la función get_completion
+            ai_response = mistral.get_completion(message, from_number)
             twilio_chat.send_message(from_number, ai_response)
 
         return Response(
