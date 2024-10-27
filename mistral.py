@@ -38,18 +38,12 @@ load_dotenv()
 
 MISTRAL_API_KEY = os.getenv('MISTRAL_API_KEY')
 MISTRAL_MODEL = os.getenv('MISTRAL_MODEL', 'mistral-large-latest')
-USERS_DIR = "usuarios"
 CONTEXT_FILE = "context.txt"
-
-# Crear directorio de usuarios si no existe
-if not os.path.exists(USERS_DIR):
-    os.makedirs(USERS_DIR)
 
 # Verificar credencial de Mistral
 if not MISTRAL_API_KEY:
     print("❌ Error: Falta MISTRAL_API_KEY en .env")
     raise ValueError("MISTRAL_API_KEY es requerido")
-
 
 def get_formatted_datetime():
     """Retorna la fecha y hora actual en formato personalizado en español"""
@@ -70,11 +64,9 @@ def get_formatted_datetime():
 
     return f"{weekday} {day} de {month} del {year}, {time}"
 
-
 def process_text_with_date(text: str) -> str:
     """Reemplaza {fecha_actual} con la fecha actual en cualquier texto"""
     return text.replace('{fecha_actual}', get_formatted_datetime())
-
 
 # Leer el contexto inicial
 try:
@@ -87,8 +79,6 @@ except Exception as e:
 # Inicializar cliente
 mistral_client = Mistral(api_key=MISTRAL_API_KEY)
 
-
-
 def initialize_chat_history() -> list:
     """Inicializa el historial de chat con el contexto inicial"""
     return [{
@@ -96,22 +86,6 @@ def initialize_chat_history() -> list:
         "content": process_text_with_date(INITIAL_CONTEXT),
         "timestamp": datetime.now().isoformat()
     }]
-
-
-def save_chat_history(phone_number: str, history: list) -> None:
-    """Guarda el historial de chat de un usuario"""
-    filename = os.path.join(USERS_DIR, f"{phone_number.replace('whatsapp:', '')}.json")
-    try:
-        # Guardar en archivo JSON
-        with open(filename, 'w', encoding='utf-8') as f:
-            json.dump(history, f, ensure_ascii=False, indent=2)
-
-        # Guardar en la base de datos PostgreSQL
-        save_chat_to_db(phone_number, history)
-
-    except Exception as e:
-        logging.error(f"Error guardando historial: {str(e)}")
-
 
 def get_completion(prompt: str, phone_number: str) -> str:
     """
@@ -157,9 +131,7 @@ def get_completion(prompt: str, phone_number: str) -> str:
             "timestamp": datetime.now().isoformat()
         })
 
-        # Guardar historial actualizado
-        save_chat_history(phone_number, history)
-
+        # Guardar historial actualizado solo en base de datos
         save_chat_to_db(phone_number, history)
 
         return response_content
