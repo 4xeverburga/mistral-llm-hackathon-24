@@ -1,13 +1,21 @@
 # ticket_dashboard.py
 import streamlit as st
+import os
+import json
 import pandas as pd
+from datetime import datetime
 
 # Page configuration
 st.set_page_config(page_title="CRM Ticket Manager", layout="wide")
 
-# Ensure ticket data is initialized in session state
-if 'tickets_data' not in st.session_state:
-    st.session_state.tickets_data = {
+# Directory to store ticket files
+tickets_dir = "tickets"
+if not os.path.exists(tickets_dir):
+    os.makedirs(tickets_dir)
+
+# Load ticket data from all ticket files in the directory
+def load_tickets_data():
+    tickets_data = {
         "ID del Ticket": [],
         "Cliente": [],
         "Asunto": [],
@@ -19,8 +27,24 @@ if 'tickets_data' not in st.session_state:
         "Descripción": []
     }
 
-# Convert session data to DataFrame for display
-tickets_df = pd.DataFrame(st.session_state.tickets_data)
+    for filename in os.listdir(tickets_dir):
+        if filename.endswith(".txt"):
+            with open(os.path.join(tickets_dir, filename), "r") as file:
+                ticket = json.load(file)
+                tickets_data["ID del Ticket"].append(ticket["ticket_id"])
+                tickets_data["Cliente"].append(ticket["user"]["name"])
+                tickets_data["Asunto"].append(ticket["description"])
+                tickets_data["Estado"].append(ticket["status_type_desc"])
+                tickets_data["Prioridad"].append(ticket["priority_type_desc"])
+                tickets_data["Fecha de Creación"].append(ticket["timestamps"]["record_creation_ts"])
+                tickets_data["Fecha de Actualización"].append(ticket["timestamps"]["last_update_ts"])
+                tickets_data["Asignado a"].append(ticket["agent"]["context"])
+                tickets_data["Descripción"].append(ticket["description"])
+
+    return pd.DataFrame(tickets_data)
+
+# Display the ticket data in a DataFrame
+tickets_df = load_tickets_data()
 
 # Sidebar filters
 st.sidebar.header("Filtrar Tickets")
@@ -50,16 +74,3 @@ for index, row in filtered_df.iterrows():
         st.write("**Fecha de Actualización:**", row["Fecha de Actualización"])
         st.write("**Asignado a:**", row["Asignado a"])
         st.write("**Descripción:**", row["Descripción"])
-
-        # Option to update status and assignee
-        new_status = st.selectbox(f"Actualizar Estado de Ticket #{row['ID del Ticket']}", ["Abierto", "En progreso", "Cerrado"], index=["Abierto", "En progreso", "Cerrado"].index(row["Estado"]))
-        new_assignee = st.selectbox(f"Reasignar Ticket #{row['ID del Ticket']}", tickets_df["Asignado a"].unique(), index=tickets_df["Asignado a"].unique().tolist().index(row["Asignado a"]))
-
-        if st.button(f"Guardar Cambios para Ticket #{row['ID del Ticket']}", key=f"save_{row['ID del Ticket']}"):
-            # Update session state data
-            ticket_index = tickets_df[tickets_df["ID del Ticket"] == row["ID del Ticket"]].index[0]
-            st.session_state.tickets_data["Estado"][ticket_index] = new_status
-            st.session_state.tickets_data["Asignado a"][ticket_index] = new_assignee
-            st.session_state.tickets_data["Fecha de Actualización"][ticket_index] = pd.Timestamp.now().strftime("%Y-%m-%d")
-            st.success(f"Estado y asignación de Ticket #{row['ID del Ticket']} actualizado.")
-            st.experimental_rerun()  # Refresh to show updated data

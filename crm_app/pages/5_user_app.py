@@ -1,34 +1,24 @@
 # user_chat.py
 import streamlit as st
 import os
+import json
 from datetime import datetime
 from mistralai import Mistral
 import time
 
-# Page configuration - this must be the first Streamlit command
+# Page configuration
 st.set_page_config(page_title="LLMHackathon", page_icon="🤖", layout="wide")
 
-# Directory to store ticket chat files
-tickets_dir = "tickets"
-if not os.path.exists(tickets_dir):
-    os.makedirs(tickets_dir)
+# Initialize session state variables if they are not already defined
+if 'MISTRAL_API_KEY' not in st.session_state:
+    st.session_state['MISTRAL_API_KEY'] = st.secrets.get("MISTRAL_API_KEY", "")
 
-# Helper to simulate streaming output with delay
-def stream_str(s, speed=250):
-    for c in s:
-        yield c
-        time.sleep(1 / speed)
+if 'MISTRAL_MODEL' not in st.session_state:
+    st.session_state['MISTRAL_MODEL'] = st.secrets.get("MISTRAL_MODEL", "mistral-large-latest")
 
-# Function to get response from Mistral AI
-def get_mistral_completion(prompt: str):
-    client = Mistral(api_key=st.session_state['MISTRAL_API_KEY'])
-    chat_response = client.chat.complete(
-        model=st.session_state['MISTRAL_MODEL'],
-        messages=[{"role": "user", "content": prompt}]
-    )
-    return chat_response.choices[0].message.content
+if 'CODEGPT_API_KEY' not in st.session_state:
+    st.session_state['CODEGPT_API_KEY'] = st.secrets.get("CODEGPT_API_KEY", "")
 
-# Initialize session state variables
 if 'tickets_data' not in st.session_state:
     st.session_state.tickets_data = {
         "ID del Ticket": [],
@@ -42,17 +32,55 @@ if 'tickets_data' not in st.session_state:
         "Descripción": []
     }
 
-if 'CODEGPT_API_KEY' not in st.session_state:
-    st.session_state['CODEGPT_API_KEY'] = st.secrets.get("CODEGPT_API_KEY", "")
-
-if 'MISTRAL_API_KEY' not in st.session_state:
-    st.session_state['MISTRAL_API_KEY'] = st.secrets.get("MISTRAL_API_KEY", "")
-
-if 'MISTRAL_MODEL' not in st.session_state:
-    st.session_state['MISTRAL_MODEL'] = st.secrets.get("MISTRAL_MODEL", "mistral-large-latest")
-
 if 'messages' not in st.session_state:
     st.session_state['messages'] = []
+
+# Helper to simulate streaming output with delay
+def stream_str(s, speed=250):
+    for c in s:
+        yield c
+        time.sleep(1 / speed)
+
+# Mistral API function
+def get_mistral_completion(prompt: str):
+    client = Mistral(api_key=st.session_state['MISTRAL_API_KEY'])
+    chat_response = client.chat.complete(
+        model=st.session_state['MISTRAL_MODEL'],
+        messages=[{"role": "user", "content": prompt}]
+    )
+    return chat_response.choices[0].message.content
+
+# Load or create ticket file
+def load_or_create_ticket(ticket_id, user_data, description, priority, channel_type):
+    ticket_file_path = os.path.join(tickets_dir, f"ticket_{ticket_id}.txt")
+    if not os.path.exists(ticket_file_path):
+        ticket_data = {
+            "ticket_id": ticket_id,
+            "status_type_desc": "Abierto",
+            "description": description,
+            "nps_flg": False,
+            "channel_type": channel_type,
+            "priority_type_desc": priority,
+            "user": user_data,
+            "agent": {"agent_id": None, "context": "No asignado"},
+            "nps_score": None,
+            "ticket_tag_array": [],
+            "timestamps": {
+                "record_creation_ts": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "last_update_ts": None,
+                "last_response_agent_ts": None,
+                "last_response_user_ts": None
+            },
+            "messages": []
+        }
+        with open(ticket_file_path, "w") as file:
+            json.dump(ticket_data, file, indent=4)
+    return ticket_file_path
+
+# Directory to store ticket files
+tickets_dir = "tickets"
+if not os.path.exists(tickets_dir):
+    os.makedirs(tickets_dir)
 
 # Collect user contact information
 st.sidebar.title("Información de Contacto")
@@ -60,46 +88,45 @@ contact_method = st.sidebar.selectbox("Método de Contacto", ["WhatsApp", "Gmail
 contact_info = st.sidebar.text_input("Contacto", placeholder="Número o Email", key="contact_info_input")
 
 # Generate or switch ticket ID based on contact info
+chat_file_path = None  # Initialize chat_file_path as None
 if contact_info:
     ticket_id = f"{contact_method}_{contact_info}"
     st.session_state['ticket_id'] = ticket_id
-    chat_file_path = os.path.join(tickets_dir, f"chat_data_{ticket_id}.txt")
-
-    # Add ticket data if it's a new ticket
-    if ticket_id not in st.session_state.tickets_data["ID del Ticket"]:
-        st.session_state.tickets_data["ID del Ticket"].append(ticket_id)
-        st.session_state.tickets_data["Cliente"].append(contact_info)
-        st.session_state.tickets_data["Asunto"].append(f"Consulta vía {contact_method}")
-        st.session_state.tickets_data["Estado"].append("Abierto")
-        st.session_state.tickets_data["Prioridad"].append("Media")
-        st.session_state.tickets_data["Fecha de Creación"].append(datetime.now().strftime("%Y-%m-%d"))
-        st.session_state.tickets_data["Fecha de Actualización"].append(datetime.now().strftime("%Y-%m-%d"))
-        st.session_state.tickets_data["Asignado a"].append("No asignado")
-        st.session_state.tickets_data["Descripción"].append(f"Contacto iniciado a través de {contact_method}")
+    chat_file_path = load_or_create_ticket(ticket_id, user_data={
+        "user_id": ticket_id,
+        "email": contact_info if "@" in contact_info else None,
+        "phone_number": contact_info if "@" not in contact_info else None,
+        "name": contact_info
+    }, description="Consulta inicial", priority="Media", channel_type=contact_method)
 else:
     st.warning("Ingresa tu información de contacto para comenzar.")
 
-# Function to reset chat history
-def reset_chat():
-    st.session_state['messages'] = []
-
-# Load chat history from the ticket-specific file
+# Load chat history
 def load_chat_history():
     st.session_state['messages'] = []
-    if contact_info and os.path.exists(chat_file_path):
-        with open(chat_file_path, "r") as f:
-            chat_history = f.readlines()
+    if chat_file_path and os.path.exists(chat_file_path):  # Ensure chat_file_path is valid
+        with open(chat_file_path, "r") as file:
+            ticket_data = json.load(file)
+            st.session_state['messages'] = ticket_data["messages"]
 
-        for line in chat_history:
-            if "Usuario:" in line:
-                role, message = "user", line.split("Usuario:", 1)[1].strip()
-            elif "Bot:" in line:
-                role, message = "assistant", line.split("Bot:", 1)[1].strip()
-            elif "Admin:" in line:
-                role, message = "admin", line.split("Admin:", 1)[1].strip()
-            else:
-                continue
-            st.session_state['messages'].append({"role": role, "content": message})
+# Save messages to ticket file
+def save_message(role, content):
+    if not chat_file_path:  # Ensure chat_file_path is defined
+        return
+    
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    message = {"message_id": len(st.session_state['messages']) + 1, "timestamp": timestamp, "role": role, "content": content}
+    st.session_state['messages'].append(message)  # Add message immediately to session
+
+    # Update ticket file with the new message
+    with open(chat_file_path, "r") as file:
+        ticket_data = json.load(file)
+    ticket_data["messages"].append(message)
+    ticket_data["timestamps"]["last_update_ts"] = timestamp
+    ticket_data["timestamps"][f"last_response_{role}_ts"] = timestamp
+
+    with open(chat_file_path, "w") as file:
+        json.dump(ticket_data, file, indent=4)
 
 # Main Interface
 st.title("LLMHackathon")
@@ -108,10 +135,11 @@ st.title("LLMHackathon")
 if st.button("Reset Chat"):
     reset_chat()
 
-# Load chat history to see any new messages, including from admin
-load_chat_history()
+# Load chat history
+if chat_file_path:
+    load_chat_history()
 
-# Display the chat messages
+# Display chat messages
 for message in st.session_state['messages']:
     with st.chat_message(message['role']):
         st.write(message['content'])
@@ -119,28 +147,15 @@ for message in st.session_state['messages']:
 # User input for new messages
 user_prompt = st.chat_input("Di algo")
 if user_prompt:
+    # Immediately display user message and save it
     st.session_state['messages'].append({"role": "user", "content": user_prompt})
     with st.chat_message("user"):
         st.write(user_prompt)
+    save_message("user", user_prompt)
 
-    # Save user message to the chat file
-    with open(chat_file_path, "a") as f:
-        f.write(f"{datetime.now()} | Usuario: {user_prompt}\n")
-
-    # Get bot response and stream output
+    # Get and display bot response
+    response = get_mistral_completion(user_prompt)
+    st.session_state['messages'].append({"role": "assistant", "content": response})
     with st.chat_message("assistant"):
-        message_placeholder = st.empty()
-        full_response = ""
-
-        # Bot response streaming
-        response = get_mistral_completion(user_prompt)
-        for chunk in stream_str(response):
-            full_response += chunk
-            message_placeholder.markdown(full_response + "▌")
-
-        message_placeholder.markdown(full_response)
-        st.session_state['messages'].append({"role": "assistant", "content": full_response})
-
-        # Save bot response to chat file
-        with open(chat_file_path, "a") as f:
-            f.write(f"{datetime.now()} | Bot: {full_response}\n")
+        st.write(response)
+    save_message("assistant", response)

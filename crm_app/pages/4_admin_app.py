@@ -1,6 +1,7 @@
 # admin_app.py
 import streamlit as st
 import os
+import json
 from datetime import datetime
 import time
 
@@ -18,39 +19,43 @@ def stream_str(s, speed=250):
 # Page configuration
 st.set_page_config(page_title="Chat CRM - Admin", page_icon="👤")
 
-# Load ticket IDs from session state
+# Load all ticket IDs from available ticket files
 st.title("Panel de Administración - Conversaciones de Tickets")
 
-# Ticket list from session data
-ticket_ids = st.session_state.tickets_data["ID del Ticket"]
+# List of ticket IDs from the tickets directory
+ticket_files = [f for f in os.listdir(tickets_dir) if f.endswith(".txt")]
+ticket_ids = [f.replace("ticket_", "").replace(".txt", "") for f in ticket_files]
+
 selected_ticket = st.selectbox("Seleccionar un Ticket", ticket_ids)
 
 if selected_ticket:
-    chat_file_path = os.path.join(tickets_dir, f"chat_data_{selected_ticket}.txt")
+    # Load the selected ticket data
+    chat_file_path = os.path.join(tickets_dir, f"ticket_{selected_ticket}.txt")
+    with open(chat_file_path, "r") as file:
+        ticket_data = json.load(file)
+
     st.write(f"### Conversación para el Ticket: {selected_ticket}")
 
-    # Load and display chat history for the selected ticket
-    if os.path.exists(chat_file_path):
-        with open(chat_file_path, "r") as f:
-            chat_history = f.readlines()
+    # Display ticket details
+    st.write("**Estado:**", ticket_data["status_type_desc"])
+    st.write("**Prioridad:**", ticket_data["priority_type_desc"])
+    st.write("**Descripción:**", ticket_data["description"])
+    st.write("**Cliente:**", ticket_data["user"]["name"])
+    st.write("**Fecha de Creación:**", ticket_data["timestamps"]["record_creation_ts"])
+    st.write("**Última Actualización:**", ticket_data["timestamps"]["last_update_ts"])
 
-        for line in chat_history:
-            if "Usuario:" in line:
-                role, message = "user", line.split("Usuario:", 1)[1].strip()
-            elif "Bot:" in line:
-                role, message = "assistant", line.split("Bot:", 1)[1].strip()
-            elif "Admin:" in line:
-                role, message = "admin", line.split("Admin:", 1)[1].strip()
-            else:
-                continue
-            with st.chat_message(role):
-                st.write(message.strip())
+    # Display chat history for the selected ticket
+    st.markdown("#### Historial de Mensajes")
+    for message in ticket_data["messages"]:
+        with st.chat_message(message["role"]):
+            st.write(message["content"])
 
     # Input for admin response
     st.write("### Responder como Admin")
     admin_response = st.chat_input("Escribe tu respuesta...")
 
     if admin_response:
+        # Display and stream the admin's response
         with st.chat_message("admin"):
             message_placeholder = st.empty()
             full_response = ""
@@ -59,6 +64,22 @@ if selected_ticket:
                 full_response += chunk
                 message_placeholder.markdown(full_response + "▌")
 
-        # Save admin message to chat file
-        with open(chat_file_path, "a") as f:
-            f.write(f"{datetime.now()} | Admin: {admin_response}\n")
+        # Append admin's response to ticket messages
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        admin_message = {
+            "message_id": len(ticket_data["messages"]) + 1,
+            "timestamp": timestamp,
+            "role": "admin",
+            "content": admin_response
+        }
+        ticket_data["messages"].append(admin_message)
+
+        # Update timestamps
+        ticket_data["timestamps"]["last_update_ts"] = timestamp
+        ticket_data["timestamps"]["last_response_asesor_ts"] = timestamp
+
+        # Save updated ticket data back to the file
+        with open(chat_file_path, "w") as file:
+            json.dump(ticket_data, file, indent=4)
+        
+        st.success("Respuesta enviada.")
