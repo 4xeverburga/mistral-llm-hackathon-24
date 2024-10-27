@@ -65,7 +65,38 @@ async def receive_message(request: Request):
         if message and from_number:
             # Pasamos el número de teléfono a la función get_completion
             ai_response = mistral.get_completion(message, from_number)
+
+            # Reemplazar ** por *
+            ai_response = ai_response.replace('**', '*')
+
+            # Remove the characters < and >
+            ai_response = ai_response.replace('<', '').replace('>', '')
+
+            image_triggers = {
+                ('vuelo', 'cajamarca', 'reservar'): 'https://llmhackathon.s3.us-east-1.amazonaws.com/cajamarca.jpg',
+                ('vuelos', 'cusco', 'reservar'): 'https://llmhackathon.s3.us-east-1.amazonaws.com/cusco.jpg',
+                ('vuelos', 'tarapoto', 'reservar'): 'https://llmhackathon.s3.us-east-1.amazonaws.com/tarapoto.jpg'
+            }
+
             twilio_chat.send_message(from_number, ai_response)
+
+            response_lower = ai_response.lower()
+            for keywords, image_url in image_triggers.items():
+                if all(keyword.lower() in response_lower for keyword in keywords):
+                    try:
+                        # Enviar la imagen correspondiente
+                        twilio_chat.send_message_with_media(from_number, "", [image_url])
+                        log_with_color(
+                            f"✅ Imagen enviada para destino: {keywords[1]}",
+                            "INFO",
+                            Fore.GREEN
+                        )
+                    except Exception as e:
+                        log_with_color(
+                            f"❌ Error enviando imagen para {keywords[1]}: {str(e)}",
+                            "ERROR",
+                            Fore.RED
+                        )
 
         return Response(
             content="<?xml version='1.0' encoding='UTF-8'?><Response></Response>",

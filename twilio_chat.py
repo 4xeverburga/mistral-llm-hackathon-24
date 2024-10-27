@@ -114,3 +114,26 @@ def is_valid_message(from_number: str, body: str) -> bool:
     if from_number == TWILIO_WHATSAPP_NUMBER:
         return False
     return True
+
+
+def send_message_with_media(to_number: str, message: str, media_urls: list) -> None:
+    """
+    Envía un mensaje de WhatsApp con archivos multimedia
+
+    Args:
+        to_number (str): Número de teléfono del destinatario
+        message (str): Mensaje de texto (puede estar vacío)
+        media_urls (list): Lista de URLs de los archivos multimedia a enviar
+    """
+    try:
+        message = client.messages.create(
+            from_=TWILIO_WHATSAPP_NUMBER,
+            body=message,
+            to=to_number,
+            media_url=media_urls
+        )
+        log_with_color(f"🖼️ Imagen enviada a {to_number}", "INFO", Fore.BLUE)
+
+    except Exception as e:
+        logging.error(f"❌ Error enviando mensaje con media: {str(e)}")
+        raise e
