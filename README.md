@@ -2,7 +2,10 @@
 
 **VirtualSellers** es un asistente virtual avanzado que redefine la atención al cliente, permitiendo que los usuarios se conecten desde canales como WhatsApp, email, Instagram y más. Desarrollado con Mistral AI y CodeGPT, ofrece respuestas personalizadas y gestiona consultas de forma rápida y eficiente.
 
-Video demostrativo: https://github.com/user-attachments/assets/5252b0e4-e3de-4cab-98d1-788caf23c160
+<div align="center">
+<video src='https://github.com/user-attachments/assets/67b0b447-915d-40c6-a442-50fde08d11ef' margin=auto></video> 
+
+Retoma el control de tu flujo en cualquier momento
 
 ## 🚀 Descripción del Proyecto
 
