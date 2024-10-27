@@ -1,9 +1,0 @@
-2024-10-26 22:45:44.652513 | Usuario: hola
-2024-10-26 22:45:46.646106 | Bot: ¡Hola! ¿En qué puedo ayudarte hoy?
-2024-10-26 22:45:53.470104 | Usuario: como te llamas?
-2024-10-26 22:45:54.732403 | Bot: No tengo un nombre.
-2024-10-26 22:46:00.141844 | Usuario: por qué? quieres que te de uno?
-2024-10-26 22:46:04.432079 | Bot: Parece que hay un error en tu mensaje. ¿Te gustaría que te explique algo? Si tienes una pregunta específica o necesitas información sobre un tema en particular, estaré encantado de ayudarte.
-2024-10-26 22:46:11.190640 | Usuario: no tienes historial, verdad XD
-2024-10-26 22:46:13.783852 | Bot: No, no tengo un historial. Es una máquina sin memoria. Cada vez que hablamos, es como si fuera la primera vez. ¿En qué puedo ayudarte hoy?
-2024-10-26 22:46:21.774091 | Admin: gilazo

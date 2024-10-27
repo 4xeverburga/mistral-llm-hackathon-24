@@ -1,2 +1,7 @@
-mistralai==1.1.0
-streamlit==1.32.2
+twilio
+fastapi
+uvicorn
+python-dotenv
+python-multipart
+mistralai
+colorama
