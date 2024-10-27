@@ -1,8 +1,5 @@
-twilio
-fastapi
-uvicorn
-python-dotenv
-python-multipart
-mistralai
-colorama
+streamlit
 psycopg2
+pandas
+python-dotenv
+mistralai
