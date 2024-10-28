@@ -52,6 +52,7 @@ Desarrollado por estudiantes de Ingeniería de Sistemas de la Universidad Nacion
 
 - **Fransua Leon Sanchez**
 - **Ever Burga Peralta**
+- **Luis Rodriguez Parreño**
 - **Sergio Yupanqui Gomez**
 
 ---
